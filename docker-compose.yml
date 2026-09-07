@@ -1,0 +1,67 @@
+services:
+  # ─── SQL Server ───────────────────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: clinic_sqlserver
+    environment:
+      MSSQL_SA_PASSWORD: "${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env}"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P '$$MSSQL_SA_PASSWORD' -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─── Backend (ASP.NET Core) ────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./src
+      dockerfile: ClinicSystem.API/Dockerfile
+    container_name: clinic_backend
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Server=sqlserver,1433;Database=ClinicDB;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;"
+      Jwt__Key: "${JWT_KEY:?Set JWT_KEY in .env}"
+      Jwt__Issuer: "ClinicSystem"
+      Jwt__Audience: "ClinicClients"
+      Jwt__ExpiryMinutes: "60"
+      Kavenegar__ApiKey: "${KAVENEGAR_API_KEY}"
+      Telegram__BotToken: "${TELEGRAM_BOT_TOKEN}"
+      WhatsApp__PhoneNumberId: "${WHATSAPP_PHONE_NUMBER_ID}"
+      WhatsApp__AccessToken: "${WHATSAPP_ACCESS_TOKEN}"
+      Seed__AdminPhone: "${ADMIN_PHONE:-09120000000}"
+      Seed__AdminPassword: "${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}"
+      Cors__AllowedOrigins__0: "http://localhost:3000"
+      Cors__AllowedOrigins__1: "${FRONTEND_URL:-https://yourdomain.com}"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Frontend (Next.js) ───────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:5000/api}"
+        NEXT_PUBLIC_HUB_URL: "${NEXT_PUBLIC_HUB_URL:-http://localhost:5000}"
+    container_name: clinic_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:5000/api}"
+      NEXT_PUBLIC_HUB_URL: "${NEXT_PUBLIC_HUB_URL:-http://localhost:5000}"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:

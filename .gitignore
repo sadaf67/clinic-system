@@ -1,0 +1,56 @@
+# ── AI assistant / local notes ─────────────────────────
+CLAUDE.md
+AGENTS.md
+.claude/
+.codex/
+.agents/
+
+# ── Secrets (NEVER commit) ─────────────────────────────
+.env
+.env.*
+!.env.example
+**/appsettings.Development.json
+**/appsettings.Production.json
+*.pfx
+*.p12
+secrets.json
+رمز*.txt
+
+# ── .NET ───────────────────────────────────────────────
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+publish/
+
+# ── Databases ──────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+
+# ── Node ───────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# ── Logs & temp ────────────────────────────────────────
+*.log
+tmp*/
+temp/
+
+# ── Archives & office docs ─────────────────────────────
+*.rar
+*.zip
+*.7z
+*.docx
+
+# ── Editors / OS ───────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
